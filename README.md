@@ -306,30 +306,33 @@ MAX_LEN = 50
 # --------------------------
 
 def build_dataset_from_captions(captions_filepath, limit=5000):
-    # load captions file (same format as earlier)
+    import csv
     texts = []
-    # For demo we naively label captions containing words like 'happy','smile' as positive,
-    # and words like 'sad','cry' as negative. This is coarse but ok for a classroom demo.
-    positive_keywords = {"happy","smile","smiling","beautiful","love","lovely","cute","fun"}
-    negative_keywords = {"sad","cry","crying","angry","hate","bad","ugly","broken"}
-
     labels = []
+
+    print("Building sentiment dataset from captions...", captions_filepath)
+
+    positive_keywords = {"happy", "smile", "smiling", "beautiful", "love", "lovely", "cute", "fun"}
+    negative_keywords = {"sad", "cry", "crying", "angry", "hate", "bad", "ugly", "broken"}
+
+    # Open the CSV file properly
     with open(captions_filepath, "r", encoding="utf8") as f:
-        for line in f:
+        reader = csv.DictReader(f)  # reads header: image, caption
+        for row in reader:
             if len(texts) >= limit:
                 break
-            line = line.strip()
-            if not line: continue
-            parts = line.split('\t')
-            if len(parts) != 2: continue
-            caption = parts[1].lower()
+            caption = row["caption"].strip().lower()
             texts.append(caption)
-            lab = 1  # neutral/positive default
+
+            # simple rule-based labeling
             if any(w in caption for w in negative_keywords):
-                lab = 0
+                labels.append(0)
             elif any(w in caption for w in positive_keywords):
-                lab = 1
-            labels.append(lab)
+                labels.append(1)
+            else:
+                labels.append(1)  # default positive/neutral
+
+    print(f"Loaded {len(texts)} captions for sentiment training.")
     return texts, np.array(labels)
 
 def main():
